@@ -34,6 +34,11 @@
   },
   "devDependencies": {
     "mocha": "^9.1.1",
-    "nodemon": "^2.0.12"
+    "nodemon": "^2.0.12",
+    "prettier": "^2.3.2"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "all"
   }
 }
