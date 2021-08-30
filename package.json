@@ -64,6 +64,18 @@
       },
       {
         "files": [
+          "public/shared.js"
+        ],
+        "env": {
+          "browser": true,
+          "node": true
+        },
+        "rules": {
+          "no-unused-vars": "off"
+        }
+      },
+      {
+        "files": [
           "public/client.js"
         ],
         "env": {
@@ -75,5 +87,10 @@
         }
       }
     ]
-  }
+  },
+  "eslintIgnore": [
+    "index.js",
+    "lib",
+    "test"
+  ]
 }
