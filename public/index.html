@@ -17,9 +17,32 @@
       body {
         margin: 0;
       }
+
+      main {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #e7e7e7;
+        overflow: hidden;
+
+        /* prevent "touch drag/scroll" and "longpress select" behavior */
+        position: fixed;
+        touch-action: none;
+        user-select: none;
+
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+      }
+
+      canvas {
+        background: #222;
+        flex-shrink: 0;
+      }
     </style>
   </head>
   <body>
+    <main><canvas id="c"></canvas></main>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/shared.js"></script>
     <script src="/client.js"></script>
