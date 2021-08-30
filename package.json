@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node index.js",
     "start:dev": "nodemon",
-    "test": "mocha test"
+    "test": "mocha test",
+    "lint": "eslint public --fix --max-warnings 0"
   },
   "keywords": [
     "js13kgames",
@@ -33,6 +34,9 @@
     "sqlite3": "^5.0.2"
   },
   "devDependencies": {
+    "eslint": "^7.32.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-prettier": "^3.4.1",
     "mocha": "^9.1.1",
     "nodemon": "^2.0.12",
     "prettier": "^2.3.2"
@@ -40,5 +44,32 @@
   "prettier": {
     "singleQuote": true,
     "trailingComma": "all"
+  },
+  "eslintConfig": {
+    "extends": [
+      "eslint:recommended",
+      "plugin:prettier/recommended"
+    ],
+    "env": {
+      "es2021": true
+    },
+    "overrides": [
+      {
+        "files": [
+          "public/server.js"
+        ],
+        "env": {
+          "node": true
+        }
+      },
+      {
+        "files": [
+          "public/client.js"
+        ],
+        "globals": {
+          "io": "readonly"
+        }
+      }
+    ]
   }
 }
