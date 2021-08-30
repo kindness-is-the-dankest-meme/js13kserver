@@ -1,1 +1,1 @@
-const socket = io({ upgrade: false, transports: ["websocket"] });
+io({ upgrade: false, transports: ['websocket'] });
