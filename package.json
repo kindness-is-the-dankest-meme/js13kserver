@@ -66,8 +66,12 @@
         "files": [
           "public/client.js"
         ],
+        "env": {
+          "browser": true
+        },
         "globals": {
-          "io": "readonly"
+          "io": "readonly",
+          "c": "readonly"
         }
       }
     ]
