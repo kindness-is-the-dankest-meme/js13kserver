@@ -3,8 +3,8 @@
  */
 const win = window;
 const { devicePixelRatio: dpr, requestAnimationFrame: raf } = win;
-const ctx = c.getContext('2d');
 const { floor, PI: π, random, sin } = Math;
+const ctx = c.getContext('2d');
 
 /**
  * events
@@ -121,24 +121,17 @@ const addPointer = ({ pointerId, pointerType, x, y }) => {
   state[`${pointerType}:${pointerId}`] = { h: floor(random() * 360), x, y };
 };
 const updatePointer = ({ pointerId, pointerType, x, y }) => {
-  state[`${pointerType}:${pointerId}`] = { x, y };
+  state[`${pointerType}:${pointerId}`].x = x;
+  state[`${pointerType}:${pointerId}`].y = y;
 };
 const removePointer = ({ pointerId, pointerType }) => {
   delete state[`${pointerType}:${pointerId}`];
 };
 
-subscribe(c, 'pointerdown', (event) => {
-  addPointer(event);
-
-  const unsub = subscribe(c, 'pointermove', updatePointer);
-  const cleanup = (event) => {
-    removePointer(event);
-    unsub();
-  };
-
-  subscribe(c, 'pointerup', cleanup, { once: true });
-  subscribe(c, 'pointercancel', cleanup, { once: true });
-});
+subscribe(c, 'pointerdown', addPointer);
+subscribe(c, 'pointermove', updatePointer);
+subscribe(c, 'pointerup', removePointer);
+subscribe(c, 'pointercancel', removePointer);
 
 /**
  * game loop
@@ -153,8 +146,8 @@ const draw = (t) => {
 
     ctx.beginPath();
 
-    const p = 10;
-    const r = (p * 2 + sin(t / 400) * p) * dpr;
+    const p = 20;
+    const r = (p * 2 + sin((t + h) / 360) * p) * dpr;
     ctx.ellipse(x * dpr, y * dpr, r, r, 0, 0, π * 2);
     ctx.fill();
   });
