@@ -7,6 +7,16 @@ const { floor, PI: π, random, sin } = Math;
 const ctx = c.getContext('2d');
 
 /**
+ * get a random 4-character string
+ */
+const chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const getRoomCode = () =>
+  Array(4)
+    .fill(0)
+    .map(() => chars[floor(random() * chars.length)])
+    .join('');
+
+/**
  * events
  */
 const subscribe = (target, type, listener, options = false) => {
@@ -40,10 +50,10 @@ const connection = new RTCPeerConnection({
   iceServers: [
     {
       urls: [
-        'stun:stun.l.google.com:19302',
         'stun:stun1.l.google.com:19302',
         'stun:stun2.l.google.com:19302',
         'stun:stun3.l.google.com:19302',
+        'stun:stun4.l.google.com:19302',
       ],
     },
   ],
@@ -61,6 +71,8 @@ if (isRude) {
       console.error(error);
     }
   });
+} else {
+  console.log(getRoomCode());
 }
 
 subscribe(connection, 'icecandidate', ({ candidate }) =>
@@ -121,6 +133,10 @@ const addPointer = ({ pointerId, pointerType, x, y }) => {
   state[`${pointerType}:${pointerId}`] = { h: floor(random() * 360), x, y };
 };
 const updatePointer = ({ pointerId, pointerType, x, y }) => {
+  if (!state[`${pointerType}:${pointerId}`]) {
+    return;
+  }
+
   state[`${pointerType}:${pointerId}`].x = x;
   state[`${pointerType}:${pointerId}`].y = y;
 };
