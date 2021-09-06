@@ -1,31 +1,29 @@
 import { subscribe } from './events.js';
-import { generateCode } from './generateCode.js';
-import {
-  c,
-  ctx,
-  dpr,
-  floor,
-  io,
-  m,
-  raf,
-  random,
-  sin,
-  win,
-  π,
-} from './globals.js';
+import { c, ctx, dpr, m, raf, sin, π } from './globals.js';
 import { channel, negotiate } from './negotiate.js';
 import { resize } from './resize.js';
 
-const scale = 16;
-resize(m, c, scale);
-
 /**
- * socket
+ * state
  */
-negotiate('ontouchstart' in win);
+const scale = 16;
+const pointers = {};
+
+resize(m, c, scale);
+negotiate(location.hash === '#guest');
 
 subscribe(channel, 'open', (event) => {
   console.log('open', event);
+
+  ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach(
+    (eventName) =>
+      subscribe(
+        c,
+        eventName,
+        ({ type, pointerType: ptype, pointerId: pid, x, y }) =>
+          channel.send(JSON.stringify({ type, ptype, pid, x, y })),
+      ),
+  );
 });
 
 subscribe(channel, 'close', (event) => {
@@ -38,32 +36,26 @@ subscribe(channel, 'error', (event) => {
 
 subscribe(channel, 'message', (event) => {
   console.log('message', event);
-});
+  const { type, ptype, pid, x, y } = JSON.parse(event.data);
 
-/**
- * state
- */
-const state = {};
+  switch (type) {
+    case 'pointerdown':
+      pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
+      break;
 
-const addPointer = ({ pointerType: type, pointerId: id, x, y }) => {
-  state[`${type}:${id}`] = { h: floor(random() * 360), x, y };
-};
-const updatePointer = ({ pointerType: type, pointerId: id, x, y }) => {
-  if (!state[`${type}:${id}`]) {
-    return;
+    case 'pointermove':
+      if (pointers[`${ptype}:${pid}`]) {
+        pointers[`${ptype}:${pid}`].x = x;
+        pointers[`${ptype}:${pid}`].y = y;
+      }
+      break;
+
+    case 'pointerup':
+    case 'pointercancel':
+      delete pointers[`${ptype}:${pid}`];
+      break;
   }
-
-  state[`${type}:${id}`].x = x;
-  state[`${type}:${id}`].y = y;
-};
-const removePointer = ({ pointerType: type, pointerId: id }) => {
-  delete state[`${type}:${id}`];
-};
-
-subscribe(c, 'pointerdown', addPointer);
-subscribe(c, 'pointermove', updatePointer);
-subscribe(c, 'pointerup', removePointer);
-subscribe(c, 'pointercancel', removePointer);
+});
 
 /**
  * game loop
@@ -73,7 +65,7 @@ const draw = (t) => {
 
   ctx.clearRect(0, 0, c.width, c.height);
 
-  Object.values(state).forEach(({ h, x, y }) => {
+  Object.values(pointers).forEach(({ h, x, y }) => {
     ctx.fillStyle = `hsl(${h}, 80%, 50%)`;
 
     ctx.beginPath();
@@ -84,5 +76,4 @@ const draw = (t) => {
     ctx.fill();
   });
 };
-
 raf(draw);
