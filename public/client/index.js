@@ -1,46 +1,22 @@
-/**
- * globals
- */
-const win = window;
-const { devicePixelRatio: dpr, requestAnimationFrame: raf } = win;
-const { floor, PI: π, random, sin } = Math;
-const ctx = c.getContext('2d');
+import { subscribe } from './events.js';
+import { generateCode } from './generateCode.js';
+import {
+  c,
+  ctx,
+  dpr,
+  floor,
+  io,
+  m,
+  raf,
+  random,
+  sin,
+  win,
+  π,
+} from './globals.js';
+import { resize } from './resize.js';
 
-/**
- * get a random 4-character string
- */
-const chars = '1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const getRoomCode = () =>
-  Array(4)
-    .fill(0)
-    .map(() => chars[floor(random() * chars.length)])
-    .join('');
-
-/**
- * events
- */
-const subscribe = (target, type, listener, options = false) => {
-  target.addEventListener(type, listener, options);
-  return () => target.removeEventListener(type, listener, options);
-};
-
-const dispatch = (target, type) => target.dispatchEvent(new Event(type));
-
-/**
- * resizing
- */
-subscribe(win, 'resize', () => {
-  const { innerWidth: w, innerHeight: h } = win;
-
-  c.width = w * dpr;
-  c.height = h * dpr;
-
-  c.style.width = `${c.width}px`;
-  c.style.height = `${c.height}px`;
-  c.style.transform = `scale(${1 / dpr})`;
-});
-
-dispatch(win, 'resize');
+const scale = 16;
+resize(m, c, scale);
 
 /**
  * socket
@@ -72,7 +48,7 @@ if (isRude) {
     }
   });
 } else {
-  console.log(getRoomCode());
+  console.log(generateCode());
 }
 
 subscribe(connection, 'icecandidate', ({ candidate }) =>
@@ -162,9 +138,9 @@ const draw = (t) => {
 
     ctx.beginPath();
 
-    const p = 20;
+    const p = 20 / scale;
     const r = (p * 2 + sin((t + h) / 360) * p) * dpr;
-    ctx.ellipse(x * dpr, y * dpr, r, r, 0, 0, π * 2);
+    ctx.ellipse((x / scale) * dpr, (y / scale) * dpr, r, r, 0, 0, π * 2);
     ctx.fill();
   });
 };
