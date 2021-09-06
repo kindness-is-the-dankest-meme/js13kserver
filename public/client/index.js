@@ -13,6 +13,7 @@ import {
   win,
   π,
 } from './globals.js';
+import { channel, negotiate } from './negotiate.js';
 import { resize } from './resize.js';
 
 const scale = 16;
@@ -21,68 +22,7 @@ resize(m, c, scale);
 /**
  * socket
  */
-const socket = io({ upgrade: false, transports: ['websocket'] });
-const connection = new RTCPeerConnection({
-  iceServers: [
-    {
-      urls: [
-        'stun:stun1.l.google.com:19302',
-        'stun:stun2.l.google.com:19302',
-        'stun:stun3.l.google.com:19302',
-        'stun:stun4.l.google.com:19302',
-      ],
-    },
-  ],
-});
-const channel = connection.createDataChannel('@kitdm/js13kgames-2021');
-
-const isRude = 'ontouchstart' in win;
-if (isRude) {
-  subscribe(connection, 'negotiationneeded', async () => {
-    try {
-      const offer = await connection.createOffer();
-      await connection.setLocalDescription(new RTCSessionDescription(offer));
-      socket.send(JSON.stringify({ description: connection.localDescription }));
-    } catch (error) {
-      console.error(error);
-    }
-  });
-} else {
-  console.log(generateCode());
-}
-
-subscribe(connection, 'icecandidate', ({ candidate }) =>
-  socket.send(JSON.stringify({ candidate })),
-);
-
-socket.on('message', async (data) => {
-  const { candidate, description } = JSON.parse(data);
-
-  try {
-    if (candidate && candidate.candidate !== '') {
-      await connection.addIceCandidate(candidate);
-    }
-
-    if (description) {
-      /**
-       * @see https://github.com/node-webrtc/node-webrtc/issues/674
-       * @see https://github.com/node-webrtc/node-webrtc/issues/677
-       */
-      await connection.setRemoteDescription(description);
-
-      if (!isRude && description.type === 'offer') {
-        const answer = await connection.createAnswer();
-        await connection.setLocalDescription(answer);
-
-        socket.send(
-          JSON.stringify({ description: connection.localDescription }),
-        );
-      }
-    }
-  } catch (error) {
-    console.error(error);
-  }
-});
+negotiate('ontouchstart' in win);
 
 subscribe(channel, 'open', (event) => {
   console.log('open', event);
