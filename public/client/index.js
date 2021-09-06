@@ -105,19 +105,19 @@ subscribe(channel, 'message', (event) => {
  */
 const state = {};
 
-const addPointer = ({ pointerId, pointerType, x, y }) => {
-  state[`${pointerType}:${pointerId}`] = { h: floor(random() * 360), x, y };
+const addPointer = ({ pointerType: type, pointerId: id, x, y }) => {
+  state[`${type}:${id}`] = { h: floor(random() * 360), x, y };
 };
-const updatePointer = ({ pointerId, pointerType, x, y }) => {
-  if (!state[`${pointerType}:${pointerId}`]) {
+const updatePointer = ({ pointerType: type, pointerId: id, x, y }) => {
+  if (!state[`${type}:${id}`]) {
     return;
   }
 
-  state[`${pointerType}:${pointerId}`].x = x;
-  state[`${pointerType}:${pointerId}`].y = y;
+  state[`${type}:${id}`].x = x;
+  state[`${type}:${id}`].y = y;
 };
-const removePointer = ({ pointerId, pointerType }) => {
-  delete state[`${pointerType}:${pointerId}`];
+const removePointer = ({ pointerType: type, pointerId: id }) => {
+  delete state[`${type}:${id}`];
 };
 
 subscribe(c, 'pointerdown', addPointer);
