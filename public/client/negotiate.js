@@ -11,12 +11,7 @@ const socketSend = (obj) => socket.send(JSON.stringify(obj));
 const connection = new RTCPeerConnection({
   iceServers: [
     {
-      urls: [
-        'stun:stun1.l.google.com:19302',
-        'stun:stun2.l.google.com:19302',
-        'stun:stun3.l.google.com:19302',
-        'stun:stun4.l.google.com:19302',
-      ],
+      urls: ['stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302'],
     },
   ],
 });
