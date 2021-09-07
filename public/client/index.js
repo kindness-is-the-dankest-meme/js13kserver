@@ -12,6 +12,7 @@ const pointers = {};
 resize(m, c, scale);
 negotiate(location.hash === '#guest');
 
+let unsub;
 subscribe(channel, 'open', (event) => {
   console.log('open', event);
 
@@ -24,38 +25,37 @@ subscribe(channel, 'open', (event) => {
           channel.send(JSON.stringify({ type, ptype, pid, x, y })),
       ),
   );
+
+  unsub = subscribe(channel, 'message', (event) => {
+    console.log('message', event);
+    const { type, ptype, pid, x, y } = JSON.parse(event.data);
+
+    switch (type) {
+      case 'pointerdown':
+        pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
+        break;
+
+      case 'pointermove':
+        if (pointers[`${ptype}:${pid}`]) {
+          pointers[`${ptype}:${pid}`].x = x;
+          pointers[`${ptype}:${pid}`].y = y;
+        }
+        break;
+
+      case 'pointerup':
+      case 'pointercancel':
+        delete pointers[`${ptype}:${pid}`];
+        break;
+    }
+  });
 });
 
-subscribe(channel, 'close', (event) => {
-  console.log('close', event);
-});
-
-subscribe(channel, 'error', (event) => {
-  console.log('error', event);
-});
-
-subscribe(channel, 'message', (event) => {
-  console.log('message', event);
-  const { type, ptype, pid, x, y } = JSON.parse(event.data);
-
-  switch (type) {
-    case 'pointerdown':
-      pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
-      break;
-
-    case 'pointermove':
-      if (pointers[`${ptype}:${pid}`]) {
-        pointers[`${ptype}:${pid}`].x = x;
-        pointers[`${ptype}:${pid}`].y = y;
-      }
-      break;
-
-    case 'pointerup':
-    case 'pointercancel':
-      delete pointers[`${ptype}:${pid}`];
-      break;
-  }
-});
+['close', 'error'].forEach((eventName) =>
+  subscribe(channel, eventName, (event) => {
+    console.log(eventName, event);
+    unsub?.();
+  }),
+);
 
 /**
  * game loop
