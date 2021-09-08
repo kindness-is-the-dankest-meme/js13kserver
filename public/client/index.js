@@ -28,6 +28,7 @@ subscribe(channel, 'open', (event) => {
 
   unsub = subscribe(channel, 'message', (event) => {
     console.log('message', event);
+
     const { type, ptype, pid, x, y } = JSON.parse(event.data);
 
     switch (type) {
