@@ -10,45 +10,55 @@ const scale = 16;
 const pointers = {};
 
 resize(m, c, scale);
-negotiate(location.hash === '#guest');
+negotiate(!!navigator.userAgent.match('Mobile'));
+
+const channelSend = ({ type, pointerType: ptype, pointerId: pid, x, y }) =>
+  channel.send(JSON.stringify({ type, ptype, pid, x, y }));
 
 let unsub;
+const us = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].reduce(
+  (acc, eventName) => {
+    acc.push(
+      subscribe(c, eventName, (event) => {
+        event.preventDefault();
+        channel.readyState === 'opem' && channelSend(event);
+      }),
+    );
+    return acc;
+  },
+  [],
+);
+
 subscribe(channel, 'open', (event) => {
   console.log('open', event);
 
-  ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach(
-    (eventName) =>
-      subscribe(
-        c,
-        eventName,
-        ({ type, pointerType: ptype, pointerId: pid, x, y }) =>
-          channel.send(JSON.stringify({ type, ptype, pid, x, y })),
-      ),
+  us.push(
+    subscribe(channel, 'message', (event) => {
+      console.log('message', event);
+
+      const { type, ptype, pid, x, y } = JSON.parse(event.data);
+
+      switch (type) {
+        case 'pointerdown':
+          pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
+          break;
+
+        case 'pointermove':
+          if (pointers[`${ptype}:${pid}`]) {
+            pointers[`${ptype}:${pid}`].x = x;
+            pointers[`${ptype}:${pid}`].y = y;
+          }
+          break;
+
+        case 'pointerup':
+        case 'pointercancel':
+          delete pointers[`${ptype}:${pid}`];
+          break;
+      }
+    }),
   );
 
-  unsub = subscribe(channel, 'message', (event) => {
-    console.log('message', event);
-
-    const { type, ptype, pid, x, y } = JSON.parse(event.data);
-
-    switch (type) {
-      case 'pointerdown':
-        pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
-        break;
-
-      case 'pointermove':
-        if (pointers[`${ptype}:${pid}`]) {
-          pointers[`${ptype}:${pid}`].x = x;
-          pointers[`${ptype}:${pid}`].y = y;
-        }
-        break;
-
-      case 'pointerup':
-      case 'pointercancel':
-        delete pointers[`${ptype}:${pid}`];
-        break;
-    }
-  });
+  unsub = () => us.forEach((u) => u());
 });
 
 ['close', 'error'].forEach((eventName) =>
