@@ -62,10 +62,18 @@ export const negotiate = (isGuest) => {
          */
         await connection.setRemoteDescription(description);
 
-        if (!isGuest && description.type === 'offer') {
+        if (description.type === 'offer') {
           const answer = await connection.createAnswer();
           await connection.setLocalDescription(answer);
           socketSend({ description: connection.localDescription });
+
+          if (!isGuest) {
+            const offer = await connection.createOffer();
+            await connection.setLocalDescription(
+              new RTCSessionDescription(offer),
+            );
+            socketSend({ description: connection.localDescription });
+          }
         }
       }
     } catch (error) {
