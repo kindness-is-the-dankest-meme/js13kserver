@@ -14,6 +14,7 @@ const connection = new RTCPeerConnection({
       urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'],
     },
   ],
+  sdpSemantics: 'unified-plan',
 });
 
 const RTCDataChannelState = {
@@ -33,6 +34,7 @@ export const negotiate = (isGuest) => {
     subscribe(connection, 'negotiationneeded', async () => {
       try {
         const offer = await connection.createOffer();
+        console.log(offer.sdp);
         await connection.setLocalDescription(new RTCSessionDescription(offer));
         socketSend({ description: connection.localDescription });
       } catch (error) {
@@ -66,14 +68,6 @@ export const negotiate = (isGuest) => {
           const answer = await connection.createAnswer();
           await connection.setLocalDescription(answer);
           socketSend({ description: connection.localDescription });
-
-          if (!isGuest) {
-            const offer = await connection.createOffer();
-            await connection.setLocalDescription(
-              new RTCSessionDescription(offer),
-            );
-            socketSend({ description: connection.localDescription });
-          }
         }
       }
     } catch (error) {
