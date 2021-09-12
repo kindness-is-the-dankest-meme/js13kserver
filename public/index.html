@@ -17,6 +17,7 @@
 
       body {
         margin: 0;
+        overscroll-behavior: none;
       }
 
       main {
@@ -48,18 +49,19 @@
     <main id="m">
       <canvas id="c"></canvas>
       <!--
-        this should go through one of two flows:
+      this should go through one of two flows:
 
-          - (click) host
-            - waiting (room code is displayed with instructions)
-            - playing (game is running)
-          - (click) join
-            - joining (room code entry is displayed)
-            - joined (waiting for everyone to join)
-              - first player gets a 'ready' button (a la Jackbox)
+        - (click) host
+          - waiting (room code is displayed with instructions)
+          - playing (game is running)
+        - (click) join
+          - joining (room code entry is displayed)
+          - joined (waiting for everyone to join)
+            - first player gets a 'ready' button (a la Jackbox)
 
-        would be cool to reuse as much as possible (obv)
+      would be cool to reuse as much as possible (obv)
       -->
+      <!--
       <nav>
         <ul>
           <li><button>host</button></li>
@@ -86,6 +88,7 @@
         </p>
         <p>When everyone is ready</p>
       </section>
+      -->
     </main>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/shared.js"></script>
