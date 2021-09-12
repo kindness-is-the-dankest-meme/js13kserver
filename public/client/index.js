@@ -35,6 +35,7 @@ subscribe(channel, 'open', (event) => {
       acc.push(
         subscribe(c, eventName, (event) => {
           event.preventDefault();
+          console.log(event);
           channelSend(messageFromPointerEvent(event));
         }),
       );
