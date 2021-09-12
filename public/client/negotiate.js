@@ -8,17 +8,18 @@ import { io } from './globals.js';
 const socket = io({ upgrade: false, transports: ['websocket'] });
 const socketSend = (obj) => socket.send(JSON.stringify(obj));
 
-const connection = new RTCPeerConnection({
-  iceServers: [
-    {
-      urls: ['stun:stun2.l.google.com:19302', 'stun:stun3.l.google.com:19302'],
-    },
-  ],
-});
-
-export const channel = connection.createDataChannel('@kitdm/js13kgames-2021');
-
 export const negotiate = (isGuest) => {
+  const connection = new RTCPeerConnection({
+    iceServers: [
+      {
+        urls: [
+          'stun:stun2.l.google.com:19302',
+          'stun:stun3.l.google.com:19302',
+        ],
+      },
+    ],
+  });
+
   if (isGuest) {
     subscribe(connection, 'negotiationneeded', async () => {
       try {
@@ -62,4 +63,6 @@ export const negotiate = (isGuest) => {
       console.error(error);
     }
   });
+
+  return connection;
 };

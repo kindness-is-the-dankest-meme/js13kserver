@@ -1,6 +1,6 @@
 import { subscribe } from './events.js';
 import { c, ctx, dpr, m, raf, sin, π } from './globals.js';
-import { channel, negotiate } from './negotiate.js';
+import { negotiate } from './negotiate.js';
 import { resize } from './resize.js';
 
 /**
@@ -10,7 +10,10 @@ const scale = 16;
 const pointers = {};
 
 resize(m, c, scale);
-negotiate(!!navigator.userAgent.match('Mobile'));
+
+export const channel = negotiate(
+  !!navigator.userAgent.match('Mobile'),
+).createDataChannel('@kitdm/js13kgames-2021');
 
 const channelSend = ({ type, pointerType: ptype, pointerId: pid, x, y }) =>
   channel.send(JSON.stringify({ type, ptype, pid, x, y }));
