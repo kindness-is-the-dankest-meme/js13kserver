@@ -22,7 +22,8 @@ const RTCDataChannelState = {
   Connecting: 'connecting',
   Open: 'open',
 };
-const channel = connection.createDataChannel('@kitdm/js13kgames-2021');
+
+export const channel = connection.createDataChannel('@kitdm/js13kgames-2021');
 export const channelSend = (obj) =>
   channel.readyState === RTCDataChannelState.Open &&
   channel.send(JSON.stringify(obj));

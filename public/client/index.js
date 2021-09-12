@@ -1,6 +1,6 @@
 import { subscribe } from './events.js';
 import { c, ctx, dpr, m, raf, sin, π } from './globals.js';
-import { channelSend, negotiate } from './negotiate.js';
+import { channel, channelSend, negotiate } from './negotiate.js';
 import { resize } from './resize.js';
 
 /**
