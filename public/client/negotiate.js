@@ -2,13 +2,13 @@ import { subscribe } from './events.js';
 import { generateCode } from './generateCode.js';
 import { io } from './globals.js';
 
-/**
- * socket
- */
-const socket = io({ upgrade: false, transports: ['websocket'] });
-const socketSend = (obj) => socket.send(JSON.stringify(obj));
-
 export const negotiate = (isGuest) => {
+  /**
+   * socket
+   */
+  const socket = io({ upgrade: false, transports: ['websocket'] });
+  const socketSend = (obj) => socket.send(JSON.stringify(obj));
+
   const connection = new RTCPeerConnection({
     iceServers: [
       {
