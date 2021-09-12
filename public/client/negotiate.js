@@ -25,9 +25,15 @@ const RTCDataChannelState = {
 };
 
 export const channel = connection.createDataChannel('@kitdm/js13kgames-2021');
-export const channelSend = (obj) =>
+export const channelSend = (obj) => {
+  console.log(
+    channel.readyState,
+    channel.readyState === RTCDataChannelState.Open,
+    obj,
+  );
   channel.readyState === RTCDataChannelState.Open &&
-  channel.send(JSON.stringify(obj));
+    channel.send(JSON.stringify(obj));
+};
 
 export const negotiate = (isGuest) => {
   if (isGuest) {
