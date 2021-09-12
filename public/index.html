@@ -1,27 +1,97 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-<title>Rock, Paper, Scissors</title>
-<meta charset="UTF-8">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>js13kgames</title>
 
-<div style="text-align:center">
-    <h1 id="message"></h1>
-    <div>
-        <button>Rock</button>
-        <button>Paper</button>
-        <button>Scissors</button>
-    </div>
-    <div id="score"></div>
-    <p>
-        <a href="/stat">Statistics</a>
-    </p>
-</div>
+    <style>
+      html,
+      body,
+      main,
+      canvas {
+        width: 100%;
+        height: 100%;
+      }
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="/shared.js"></script>
-<script src="/client.js"></script>
+      body {
+        margin: 0;
+        overscroll-behavior: none;
+      }
 
-</body>
+      main {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background: #e7e7e7;
+        overflow: hidden;
+      }
+
+      canvas {
+        background: #222;
+        flex-shrink: 0;
+
+        /* prevent "touch drag/scroll" and "longpress select" behavior */
+        position: fixed;
+        touch-action: none;
+        user-select: none;
+
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+
+        image-rendering: crisp-edges;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="m">
+      <canvas id="c"></canvas>
+      <!--
+      this should go through one of two flows:
+
+        - (click) host
+          - waiting (room code is displayed with instructions)
+          - playing (game is running)
+        - (click) join
+          - joining (room code entry is displayed)
+          - joined (waiting for everyone to join)
+            - first player gets a 'ready' button (a la Jackbox)
+
+      would be cool to reuse as much as possible (obv)
+      -->
+      <!--
+      <nav>
+        <ul>
+          <li><button>host</button></li>
+          <li><button>join</button></li>
+        </ul>
+      </nav>
+      <section>
+        <h2>room code</h2>
+        <h3></h3>
+      </section>
+      <section>
+        <fieldset>
+          <legend>enter room code</legend>
+          <ol>
+            <li><input type="text" id="d0" size="1" /></li>
+            <li><input type="text" id="d1" size="1" /></li>
+            <li><input type="text" id="d2" size="1" /></li>
+            <li><input type="text" id="d3" size="1" /></li>
+          </ol>
+        </fieldset>
+        <p>
+          For best results: "Settings > Display & Brightness > Auto-Lock >
+          Never" and "Portrait Orientation Lock: On".
+        </p>
+        <p>When everyone is ready</p>
+      </section>
+      -->
+    </main>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/shared.js"></script>
+    <script src="/client/index.js" type="module"></script>
+  </body>
 </html>
