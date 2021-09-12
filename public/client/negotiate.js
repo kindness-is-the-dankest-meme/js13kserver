@@ -34,7 +34,11 @@ export const negotiate = (isGuest) => {
     subscribe(connection, 'negotiationneeded', async () => {
       try {
         const offer = await connection.createOffer();
-        console.log(offer.sdp);
+        /**
+         * ¯\_(ツ)_/¯
+         * @see https://github.com/feross/simple-peer/blob/9ea1805/index.js#L16
+         */
+        // offer.sdp = offer.sdp.replace(/a=ice-options:trickle\s\n/g, '');
         await connection.setLocalDescription(new RTCSessionDescription(offer));
         socketSend({ description: connection.localDescription });
       } catch (error) {
@@ -58,13 +62,18 @@ export const negotiate = (isGuest) => {
       }
 
       if (description) {
-        /**
-         * @see https://github.com/node-webrtc/node-webrtc/issues/674
-         * @see https://github.com/node-webrtc/node-webrtc/issues/677
-         */
-        await connection.setRemoteDescription(description);
+        if (
+          (isGuest && description.type !== 'offer') ||
+          (!isGuest && description.type === 'offer')
+        ) {
+          /**
+           * @see https://github.com/node-webrtc/node-webrtc/issues/674
+           * @see https://github.com/node-webrtc/node-webrtc/issues/677
+           */
+          await connection.setRemoteDescription(description);
+        }
 
-        if (description.type === 'offer') {
+        if (!isGuest && description.type === 'offer') {
           const answer = await connection.createAnswer();
           await connection.setLocalDescription(answer);
           socketSend({ description: connection.localDescription });
