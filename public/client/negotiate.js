@@ -2,21 +2,32 @@ import { subscribe } from './events.js';
 import { generateCode } from './generateCode.js';
 import { io } from './globals.js';
 
+/**
+ * socket
+ */
+const socket = io({ upgrade: false, transports: ['websocket'] });
+const socketSend = (obj) => socket.send(JSON.stringify(obj));
+
+const connection = new RTCPeerConnection({
+  iceServers: [
+    {
+      urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'],
+    },
+  ],
+});
+
+const RTCDataChannelState = {
+  Closed: 'closed',
+  Closing: 'closing',
+  Connecting: 'connecting',
+  Open: 'open',
+};
+const channel = connection.createDataChannel('@kitdm/js13kgames-2021');
+export const channelSend = (obj) =>
+  channel.readyState === RTCDataChannelState.Open &&
+  channel.send(JSON.stringify(obj));
+
 export const negotiate = (isGuest) => {
-  /**
-   * socket
-   */
-  const socket = io({ upgrade: false, transports: ['websocket'] });
-  const socketSend = (obj) => socket.send(JSON.stringify(obj));
-
-  const connection = new RTCPeerConnection({
-    iceServers: [
-      {
-        urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'],
-      },
-    ],
-  });
-
   if (isGuest) {
     subscribe(connection, 'negotiationneeded', async () => {
       try {
@@ -60,6 +71,4 @@ export const negotiate = (isGuest) => {
       console.error(error);
     }
   });
-
-  return connection;
 };

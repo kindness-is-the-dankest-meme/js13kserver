@@ -1,6 +1,6 @@
 import { subscribe } from './events.js';
 import { c, ctx, dpr, m, raf, sin, π } from './globals.js';
-import { negotiate } from './negotiate.js';
+import { channelSend, negotiate } from './negotiate.js';
 import { resize } from './resize.js';
 
 /**
@@ -10,55 +10,62 @@ const scale = 16;
 const pointers = {};
 
 resize(m, c, scale);
+negotiate(!!navigator.userAgent.match('Mobile'));
 
-export const channel = negotiate(
-  !!navigator.userAgent.match('Mobile'),
-).createDataChannel('@kitdm/js13kgames-2021');
-
-const channelSend = ({ type, pointerType: ptype, pointerId: pid, x, y }) =>
-  channel.send(JSON.stringify({ type, ptype, pid, x, y }));
+const messageFromPointerEvent = ({
+  type,
+  pointerType: ptype,
+  pointerId: pid,
+  clientX: x,
+  clientY: y,
+}) => ({ type, ptype, pid, x, y });
 
 let unsub;
-const us = ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].reduce(
-  (acc, eventName) => {
-    acc.push(
-      subscribe(c, eventName, (event) => {
-        event.preventDefault();
-        channel.readyState === 'opem' && channelSend(event);
-      }),
-    );
-    return acc;
-  },
-  [],
-);
 
 subscribe(channel, 'open', (event) => {
   console.log('open', event);
 
-  us.push(
-    subscribe(channel, 'message', (event) => {
-      console.log('message', event);
+  const us = [
+    'pointerdown',
+    'pointermove',
+    'pointerup',
+    'pointercancel',
+  ].reduce(
+    (acc, eventName) => {
+      acc.push(
+        subscribe(c, eventName, (event) => {
+          event.preventDefault();
+          channelSend(messageFromPointerEvent(event));
+        }),
+      );
 
-      const { type, ptype, pid, x, y } = JSON.parse(event.data);
+      return acc;
+    },
+    [
+      subscribe(channel, 'message', (event) => {
+        console.log('message', event);
 
-      switch (type) {
-        case 'pointerdown':
-          pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
-          break;
+        const { type, ptype, pid, x, y } = JSON.parse(event.data);
 
-        case 'pointermove':
-          if (pointers[`${ptype}:${pid}`]) {
-            pointers[`${ptype}:${pid}`].x = x;
-            pointers[`${ptype}:${pid}`].y = y;
-          }
-          break;
+        switch (type) {
+          case 'pointerdown':
+            pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
+            break;
 
-        case 'pointerup':
-        case 'pointercancel':
-          delete pointers[`${ptype}:${pid}`];
-          break;
-      }
-    }),
+          case 'pointermove':
+            if (pointers[`${ptype}:${pid}`]) {
+              pointers[`${ptype}:${pid}`].x = x;
+              pointers[`${ptype}:${pid}`].y = y;
+            }
+            break;
+
+          case 'pointerup':
+          case 'pointercancel':
+            delete pointers[`${ptype}:${pid}`];
+            break;
+        }
+      }),
+    ],
   );
 
   unsub = () => us.forEach((u) => u());
