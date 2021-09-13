@@ -1,21 +1,21 @@
-const sockets = new Map();
-
 module.exports = {
   io: (socket) => {
-    sockets.set(socket.id, socket);
-
     socket.on('message', (data) => {
-      sockets.forEach((s, i) => {
-        if (socket.id === i) {
-          return;
-        }
+      const parsedData = JSON.parse(data);
 
-        s.send(data);
-      });
-    });
+      if ('candidate' in parsedData || 'description' in parsedData) {
+        io.sockets.sockets.forEach((s, i) => {
+          if (socket.id === i) {
+            return;
+          }
 
-    socket.on('disconnect', () => {
-      sockets.delete(socket.id);
+          s.send(data);
+        });
+
+        return;
+      }
+
+      // do something with rooms here
     });
   },
 };

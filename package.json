@@ -60,6 +60,9 @@
         ],
         "env": {
           "node": true
+        },
+        "globals": {
+          "io": true
         }
       },
       {

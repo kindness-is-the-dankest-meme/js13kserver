@@ -6,7 +6,22 @@ import { io } from './globals.js';
  * socket
  */
 const socket = io({ upgrade: false, transports: ['websocket'] });
-const socketSend = (obj) => socket.send(JSON.stringify(obj));
+
+const socketConnected = () =>
+  socket.connected
+    ? Promise.resolve(true)
+    : new Promise((resolve) => {
+        socket.once('connect', () => {
+          console.log('connect');
+          resolve(true);
+        });
+      });
+
+const socketSend = async (obj) => {
+  await socketConnected();
+  console.log('socket', socket.connected, obj);
+  socket.connected && socket.send(JSON.stringify(obj));
+};
 
 const connection = new RTCPeerConnection({
   iceServers: [
@@ -16,6 +31,31 @@ const connection = new RTCPeerConnection({
   ],
   sdpSemantics: 'unified-plan',
 });
+
+const connectionSendOffer = async () => {
+  try {
+    const offer = await connection.createOffer();
+    /**
+     * ¯\_(ツ)_/¯
+     * @see https://github.com/feross/simple-peer/blob/9ea1805/index.js#L16
+     */
+    // offer.sdp = offer.sdp.replace(/a=ice-options:trickle\s\n/g, '');
+    await connection.setLocalDescription(new RTCSessionDescription(offer));
+    await socketSend({ description: connection.localDescription });
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const connectionSendAnswer = async () => {
+  try {
+    const answer = await connection.createAnswer();
+    await connection.setLocalDescription(answer);
+    await socketSend({ description: connection.localDescription });
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 const RTCDataChannelState = {
   Closed: 'closed',
@@ -27,6 +67,7 @@ const RTCDataChannelState = {
 export const channel = connection.createDataChannel('@kitdm/js13kgames-2021');
 export const channelSend = (obj) => {
   console.log(
+    'channel',
     channel.readyState,
     channel.readyState === RTCDataChannelState.Open,
     obj,
@@ -37,30 +78,20 @@ export const channelSend = (obj) => {
 
 export const negotiate = (isGuest) => {
   if (isGuest) {
-    subscribe(connection, 'negotiationneeded', async () => {
-      try {
-        const offer = await connection.createOffer();
-        /**
-         * ¯\_(ツ)_/¯
-         * @see https://github.com/feross/simple-peer/blob/9ea1805/index.js#L16
-         */
-        // offer.sdp = offer.sdp.replace(/a=ice-options:trickle\s\n/g, '');
-        await connection.setLocalDescription(new RTCSessionDescription(offer));
-        socketSend({ description: connection.localDescription });
-      } catch (error) {
-        console.error(error);
-      }
-    });
+    subscribe(connection, 'negotiationneeded', connectionSendOffer);
   } else {
     console.log(generateCode());
   }
 
-  subscribe(connection, 'icecandidate', ({ candidate }) =>
-    socketSend({ candidate }),
+  subscribe(
+    connection,
+    'icecandidate',
+    async ({ candidate }) => await socketSend({ candidate }),
   );
 
   socket.on('message', async (data) => {
     const { candidate, description } = JSON.parse(data);
+    console.log({ candidate, description });
 
     try {
       if (candidate && candidate.candidate !== '') {
@@ -68,21 +99,14 @@ export const negotiate = (isGuest) => {
       }
 
       if (description) {
-        if (
-          (isGuest && description.type !== 'offer') ||
-          (!isGuest && description.type === 'offer')
-        ) {
-          /**
-           * @see https://github.com/node-webrtc/node-webrtc/issues/674
-           * @see https://github.com/node-webrtc/node-webrtc/issues/677
-           */
-          await connection.setRemoteDescription(description);
-        }
+        /**
+         * @see https://github.com/node-webrtc/node-webrtc/issues/674
+         * @see https://github.com/node-webrtc/node-webrtc/issues/677
+         */
+        await connection.setRemoteDescription(description);
 
-        if (!isGuest && description.type === 'offer') {
-          const answer = await connection.createAnswer();
-          await connection.setLocalDescription(answer);
-          socketSend({ description: connection.localDescription });
+        if (description.type === 'offer') {
+          await connectionSendAnswer();
         }
       }
     } catch (error) {
