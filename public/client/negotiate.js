@@ -40,6 +40,9 @@ export const channelSend = async (obj) => {
 };
 
 export const negotiate = (isGuest, onOpen, onMessage, onCloseError) => {
+  /**
+   * @see https://stackoverflow.com/a/37029820/1577876
+   */
   subscribe(connection, 'datachannel', (event) => {
     subscribe(event.channel, 'open', onOpen);
     subscribe(event.channel, 'message', onMessage);
