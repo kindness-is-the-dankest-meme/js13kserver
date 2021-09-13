@@ -1,5 +1,5 @@
 import { subscribe } from './events.js';
-import { b, c, ctx, dpr, m, raf, sin, π } from './globals.js';
+import { c, ctx, dpr, m, raf, sin, π } from './globals.js';
 import { channel, channelSend, negotiate } from './negotiate.js';
 import { resize } from './resize.js';
 
@@ -8,26 +8,6 @@ import { resize } from './resize.js';
  */
 const scale = 16;
 const pointers = {};
-const isGuest = !!navigator.userAgent.match('Mobile');
-
-if (isGuest) {
-  subscribe(
-    b,
-    'click',
-    async () => {
-      await navigator.mediaDevices?.getUserMedia({
-        audio: true,
-        video: true,
-      });
-      negotiate(isGuest);
-      b.remove();
-    },
-    { once: true },
-  );
-} else {
-  negotiate(isGuest);
-  b.remove();
-}
 
 resize(m, c, scale);
 
@@ -40,61 +20,60 @@ const messageFromPointerEvent = ({
 }) => ({ type, ptype, pid, x, y });
 
 let unsub;
+negotiate(
+  !!navigator.userAgent.match('Mobile'),
+  (event) => {
+    console.log('open', event);
 
-subscribe(channel, 'open', (event) => {
-  console.log('open', event);
+    const us = [
+      'pointerdown',
+      'pointermove',
+      'pointerup',
+      'pointercancel',
+    ].reduce(
+      (acc, eventName) => {
+        acc.push(
+          subscribe(c, eventName, (event) => {
+            event.preventDefault();
+            channelSend(messageFromPointerEvent(event));
+          }),
+        );
 
-  const us = [
-    'pointerdown',
-    'pointermove',
-    'pointerup',
-    'pointercancel',
-  ].reduce(
-    (acc, eventName) => {
-      acc.push(
-        subscribe(c, eventName, (event) => {
-          event.preventDefault();
-          channelSend(messageFromPointerEvent(event));
+        return acc;
+      },
+      [
+        subscribe(channel, 'message', (event) => {
+          console.log('message', event);
+
+          const { type, ptype, pid, x, y } = JSON.parse(event.data);
+
+          switch (type) {
+            case 'pointerdown':
+              pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
+              break;
+
+            case 'pointermove':
+              if (pointers[`${ptype}:${pid}`]) {
+                pointers[`${ptype}:${pid}`].x = x;
+                pointers[`${ptype}:${pid}`].y = y;
+              }
+              break;
+
+            case 'pointerup':
+            case 'pointercancel':
+              delete pointers[`${ptype}:${pid}`];
+              break;
+          }
         }),
-      );
+      ],
+    );
 
-      return acc;
-    },
-    [
-      subscribe(channel, 'message', (event) => {
-        console.log('message', event);
-
-        const { type, ptype, pid, x, y } = JSON.parse(event.data);
-
-        switch (type) {
-          case 'pointerdown':
-            pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
-            break;
-
-          case 'pointermove':
-            if (pointers[`${ptype}:${pid}`]) {
-              pointers[`${ptype}:${pid}`].x = x;
-              pointers[`${ptype}:${pid}`].y = y;
-            }
-            break;
-
-          case 'pointerup':
-          case 'pointercancel':
-            delete pointers[`${ptype}:${pid}`];
-            break;
-        }
-      }),
-    ],
-  );
-
-  unsub = () => us.forEach((u) => u());
-});
-
-['close', 'error'].forEach((eventName) =>
-  subscribe(channel, eventName, (event) => {
+    unsub = () => us.forEach((u) => u());
+  },
+  (event) => {
     console.log(eventName, event);
     unsub?.();
-  }),
+  },
 );
 
 /**

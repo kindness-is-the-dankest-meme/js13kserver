@@ -16,6 +16,7 @@ module.exports = {
       }
 
       // do something with rooms here
+      console.log(parsedData);
     });
   },
 };

@@ -70,10 +70,19 @@ export const channelSend = (obj) => {
     channel.send(JSON.stringify(obj));
 };
 
-export const negotiate = (isGuest) => {
+export const negotiate = (isGuest, onOpen, onCloseError) => {
   if (isGuest) {
     subscribe(connection, 'negotiationneeded', connectionSendOffer);
   } else {
+    subscribe(connection, 'datachannel', () => {
+      console.log('datachannel');
+
+      subscribe(channel, 'open', onOpen);
+
+      ['close', 'error'].forEach((eventName) =>
+        subscribe(channel, eventName, onCloseError),
+      );
+    });
     console.log(generateCode());
   }
 
