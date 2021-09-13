@@ -8,19 +8,13 @@ import { io } from './globals.js';
 const socket = io({ upgrade: false, transports: ['websocket'] });
 
 const socketConnected = () =>
-  socket.connected
-    ? Promise.resolve(true)
-    : new Promise((resolve) => {
-        socket.once('connect', () => {
-          console.log('connect');
-          resolve(true);
-        });
-      });
+  !socket.connected
+    ? new Promise((resolve) => socket.once('connect', () => resolve(true)))
+    : Promise.resolve(true);
 
 const socketSend = async (obj) => {
   await socketConnected();
-  console.log('socket', socket.connected, obj);
-  socket.connected && socket.send(JSON.stringify(obj));
+  socket.send(JSON.stringify(obj));
 };
 
 const connection = new RTCPeerConnection({

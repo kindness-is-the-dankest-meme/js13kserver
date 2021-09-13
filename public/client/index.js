@@ -1,5 +1,5 @@
 import { subscribe } from './events.js';
-import { c, ctx, dpr, m, raf, sin, π } from './globals.js';
+import { b, c, ctx, dpr, m, raf, sin, π } from './globals.js';
 import { channel, channelSend, negotiate } from './negotiate.js';
 import { resize } from './resize.js';
 
@@ -8,9 +8,25 @@ import { resize } from './resize.js';
  */
 const scale = 16;
 const pointers = {};
+const isGuest = !!navigator.userAgent.match('Mobile');
+
+if (isGuest) {
+  subscribe(
+    b,
+    'click',
+    () => {
+      navigator.mediaDevices?.getUserMedia({ audio: false, video: false });
+      negotiate(isGuest);
+      b.remove();
+    },
+    { once: true },
+  );
+} else {
+  negotiate(isGuest);
+  b.remove();
+}
 
 resize(m, c, scale);
-negotiate(!!navigator.userAgent.match('Mobile'));
 
 const messageFromPointerEvent = ({
   type,
