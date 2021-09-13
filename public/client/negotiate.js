@@ -25,76 +25,54 @@ const connection = new RTCPeerConnection({
   ],
   sdpSemantics: 'unified-plan',
 });
+const channel = connection.createDataChannel('@kitdm/js13kgames-2021');
 
-const connectionSendOffer = async () => {
-  try {
-    const offer = await connection.createOffer();
-    /**
-     * ¯\_(ツ)_/¯
-     * @see https://github.com/feross/simple-peer/blob/9ea1805/index.js#L16
-     */
-    // offer.sdp = offer.sdp.replace(/a=ice-options:trickle\s\n/g, '');
-    await connection.setLocalDescription(new RTCSessionDescription(offer));
-    await socketSend({ description: connection.localDescription });
-  } catch (error) {
-    console.error(error);
-  }
+const channelOpen = () =>
+  channel.readyState !== 'open'
+    ? new Promise((resolve) =>
+        subscribe(channel, 'open', () => resolve(true), { once: true }),
+      )
+    : Promise.resolve(true);
+
+export const channelSend = async (obj) => {
+  await channelOpen();
+  channel.send(JSON.stringify(obj));
 };
 
-const connectionSendAnswer = async () => {
-  try {
-    const answer = await connection.createAnswer();
-    await connection.setLocalDescription(answer);
-    await socketSend({ description: connection.localDescription });
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const RTCDataChannelState = {
-  Closed: 'closed',
-  Closing: 'closing',
-  Connecting: 'connecting',
-  Open: 'open',
-};
-
-export const channel = connection.createDataChannel('@kitdm/js13kgames-2021');
-export const channelSend = (obj) => {
-  console.log(
-    'channel',
-    channel.readyState,
-    channel.readyState === RTCDataChannelState.Open,
-    obj,
-  );
-  channel.readyState === RTCDataChannelState.Open &&
-    channel.send(JSON.stringify(obj));
-};
-
-export const negotiate = (isGuest, onOpen, onCloseError) => {
+export const negotiate = (isGuest, onOpen, onMessage, onCloseError) => {
   subscribe(connection, 'datachannel', (event) => {
-    console.log(event.type, event);
-
-    subscribe(channel, 'open', onOpen);
+    subscribe(event.channel, 'open', onOpen);
+    subscribe(event.channel, 'message', onMessage);
     ['close', 'error'].forEach((eventName) =>
-      subscribe(channel, eventName, onCloseError),
+      subscribe(event.channel, eventName, onCloseError),
     );
   });
 
   if (isGuest) {
-    subscribe(connection, 'negotiationneeded', connectionSendOffer);
+    subscribe(connection, 'negotiationneeded', async () => {
+      try {
+        const offer = await connection.createOffer();
+        /**
+         * ¯\_(ツ)_/¯
+         * @see https://github.com/feross/simple-peer/blob/9ea1805/index.js#L16
+         */
+        // offer.sdp = offer.sdp.replace(/a=ice-options:trickle\s\n/g, '');
+        await connection.setLocalDescription(new RTCSessionDescription(offer));
+        await socketSend({ description: connection.localDescription });
+      } catch (error) {
+        console.error(error);
+      }
+    });
   } else {
     console.log(generateCode());
   }
 
-  subscribe(
-    connection,
-    'icecandidate',
-    async ({ candidate }) => await socketSend({ candidate }),
+  subscribe(connection, 'icecandidate', ({ candidate }) =>
+    socketSend({ candidate }),
   );
 
   socket.on('message', async (data) => {
     const { candidate, description } = JSON.parse(data);
-    console.log({ candidate, description });
 
     try {
       if (candidate && candidate.candidate !== '') {
@@ -109,7 +87,9 @@ export const negotiate = (isGuest, onOpen, onCloseError) => {
         await connection.setRemoteDescription(description);
 
         if (description.type === 'offer') {
-          await connectionSendAnswer();
+          const answer = await connection.createAnswer();
+          await connection.setLocalDescription(answer);
+          await socketSend({ description: connection.localDescription });
         }
       }
     } catch (error) {

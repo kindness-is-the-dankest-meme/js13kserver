@@ -1,6 +1,6 @@
 import { subscribe } from './events.js';
-import { c, ctx, dpr, m, raf, sin, π } from './globals.js';
-import { channel, channelSend, negotiate } from './negotiate.js';
+import { c, ctx, dpr, floor, m, raf, random, sin, π } from './globals.js';
+import { channelSend, negotiate } from './negotiate.js';
 import { resize } from './resize.js';
 
 /**
@@ -19,60 +19,49 @@ const messageFromPointerEvent = ({
   clientY: y,
 }) => ({ type, ptype, pid, x, y });
 
-let unsub;
+const us = [];
 negotiate(
   !!navigator.userAgent.match('Mobile'),
-  (event) => {
-    console.log(event.type, event);
+  (/* event */) => {
+    // console.log(event.type, event);
 
-    const us = [
-      'pointerdown',
-      'pointermove',
-      'pointerup',
-      'pointercancel',
-    ].reduce(
-      (acc, eventName) => {
-        acc.push(
+    ['pointerdown', 'pointermove', 'pointerup', 'pointercancel'].forEach(
+      (eventName) =>
+        us.push(
           subscribe(c, eventName, (event) => {
             event.preventDefault();
             channelSend(messageFromPointerEvent(event));
           }),
-        );
-
-        return acc;
-      },
-      [
-        subscribe(channel, 'message', (event) => {
-          console.log('message', event);
-
-          const { type, ptype, pid, x, y } = JSON.parse(event.data);
-
-          switch (type) {
-            case 'pointerdown':
-              pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
-              break;
-
-            case 'pointermove':
-              if (pointers[`${ptype}:${pid}`]) {
-                pointers[`${ptype}:${pid}`].x = x;
-                pointers[`${ptype}:${pid}`].y = y;
-              }
-              break;
-
-            case 'pointerup':
-            case 'pointercancel':
-              delete pointers[`${ptype}:${pid}`];
-              break;
-          }
-        }),
-      ],
+        ),
     );
-
-    unsub = () => us.forEach((u) => u());
   },
   (event) => {
-    console.log(event.type, event);
-    unsub?.();
+    // console.log(event.type, event);
+
+    const { type, ptype, pid, x, y } = JSON.parse(event.data);
+    switch (type) {
+      case 'pointerdown':
+        pointers[`${ptype}:${pid}`] = { h: floor(random() * 360), x, y };
+        break;
+
+      case 'pointermove':
+        if (pointers[`${ptype}:${pid}`]) {
+          pointers[`${ptype}:${pid}`].x = x;
+          pointers[`${ptype}:${pid}`].y = y;
+        }
+        break;
+
+      case 'pointerup':
+      case 'pointercancel':
+        delete pointers[`${ptype}:${pid}`];
+        break;
+    }
+  },
+  (/* event */) => {
+    // console.log(event.type, event);
+
+    us.forEach((u) => u());
+    us.length = 0;
   },
 );
 
