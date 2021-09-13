@@ -14,8 +14,11 @@ if (isGuest) {
   subscribe(
     b,
     'click',
-    () => {
-      navigator.mediaDevices?.getUserMedia({ audio: false, video: false });
+    async () => {
+      await navigator.mediaDevices?.getUserMedia({
+        audio: true,
+        video: true,
+      });
       negotiate(isGuest);
       b.remove();
     },
