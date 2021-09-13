@@ -71,18 +71,18 @@ export const channelSend = (obj) => {
 };
 
 export const negotiate = (isGuest, onOpen, onCloseError) => {
+  subscribe(connection, 'datachannel', (event) => {
+    console.log(event.type, event);
+
+    subscribe(channel, 'open', onOpen);
+    ['close', 'error'].forEach((eventName) =>
+      subscribe(channel, eventName, onCloseError),
+    );
+  });
+
   if (isGuest) {
     subscribe(connection, 'negotiationneeded', connectionSendOffer);
   } else {
-    subscribe(connection, 'datachannel', () => {
-      console.log('datachannel');
-
-      subscribe(channel, 'open', onOpen);
-
-      ['close', 'error'].forEach((eventName) =>
-        subscribe(channel, eventName, onCloseError),
-      );
-    });
     console.log(generateCode());
   }
 

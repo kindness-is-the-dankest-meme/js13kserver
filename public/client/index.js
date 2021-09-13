@@ -23,7 +23,7 @@ let unsub;
 negotiate(
   !!navigator.userAgent.match('Mobile'),
   (event) => {
-    console.log('open', event);
+    console.log(event.type, event);
 
     const us = [
       'pointerdown',
@@ -71,7 +71,7 @@ negotiate(
     unsub = () => us.forEach((u) => u());
   },
   (event) => {
-    console.log(eventName, event);
+    console.log(event.type, event);
     unsub?.();
   },
 );
